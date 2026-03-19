@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "700sinmungo",
+  "compatibility_date": "2024-03-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "./dist",
+  
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "700sinmungo-production",
+      "database_id": "9481b5f9-5fc8-4cf4-89a1-ea1e0ee443a3",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
