@@ -4,22 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 type Bindings = {
   DB: D1Database;
-  ASSETS: Fetcher;
+  ASSETS?: Fetcher;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Enable CORS
 app.use('/api/*', cors());
-
-// Serve static assets
-app.get('/assets/*', async (c) => {
-  try {
-    return await c.env.ASSETS.fetch(c.req.raw);
-  } catch {
-    return c.notFound();
-  }
-});
 
 // --- API Routes ---
 
@@ -181,7 +172,7 @@ app.get('*', (c) => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>700신문고 - Global Korean Voice Platform</title>
-  <script type="module" crossorigin src="/assets/index-CyT8ZAJw.js"></script>
+  <script type="module" crossorigin src="/assets/index-B4eLGEMa.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-C-8Rv5YB.css">
 </head>
 <body>
