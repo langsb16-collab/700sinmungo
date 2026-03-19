@@ -126,24 +126,35 @@ const ChatWindow = ({ isOpen, onClose, isAuthenticated, setIsAuthOpen }: {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/api/chat`);
-    wsRef.current = ws;
+    // WebSocket connection - gracefully handle connection failures
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}/api/chat`);
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'join', room: 'global' }));
-    };
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'join', room: 'global' }));
+      };
 
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === 'message') {
-        setMessages(prev => [...prev, msg.payload]);
-      }
-    };
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'message') {
+          setMessages(prev => [...prev, msg.payload]);
+        }
+      };
 
-    return () => {
-      ws.close();
-    };
+      ws.onerror = (error) => {
+        console.log('WebSocket connection not available - chat feature disabled');
+      };
+
+      return () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    } catch (error) {
+      console.log('WebSocket not supported - chat feature disabled');
+    }
   }, []);
 
   useEffect(() => {

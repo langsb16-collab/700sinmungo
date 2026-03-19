@@ -165,8 +165,16 @@ app.get('/api/health', (c) => {
   });
 });
 
-// Root route - serve React app
-app.get('/', (c) => {
+// WebSocket chat endpoint - not yet implemented
+app.get('/api/chat', (c) => {
+  return c.json({ 
+    error: 'WebSocket chat requires Durable Objects',
+    message: 'Real-time chat feature coming soon'
+  }, 501);
+});
+
+// Catch all for SPA routing
+app.get('*', (c) => {
   return c.html(`<!doctype html>
 <html lang="ko">
 <head>
