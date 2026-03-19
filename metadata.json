@@ -1,0 +1,9 @@
+{
+  "name": "700만 한인 신문고 0303",
+  "description": "A digital platform for the 7 million overseas Koreans to report complaints, participate in policy discussions, and access AI-driven support in 8 languages.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

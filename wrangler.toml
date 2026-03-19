@@ -1,0 +1,25 @@
+name = "gkv-platform"
+compatibility_date = "2024-03-19"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gkv_db"
+database_id = "your-database-id"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "gkv-uploads"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-id"
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
