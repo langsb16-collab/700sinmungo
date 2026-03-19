@@ -122,40 +122,29 @@ const ChatWindow = ({ isOpen, onClose, isAuthenticated, setIsAuthOpen }: {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // HTTP Polling instead of WebSocket (Cloudflare Pages compatible)
   useEffect(() => {
-    // WebSocket connection - gracefully handle connection failures
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${window.location.host}/api/chat`);
-      wsRef.current = ws;
+    if (!isOpen) return;
 
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'join', room: 'global' }));
-      };
+    // Poll for messages every 3 seconds
+    const pollInterval = setInterval(async () => {
+      try {
+        // This would fetch messages from your API
+        // For now, we'll skip the actual API call since the endpoint isn't implemented yet
+        // const response = await fetch('/api/messages?room=global&since=' + lastMessageId);
+        // const newMessages = await response.json();
+        // setMessages(prev => [...prev, ...newMessages]);
+      } catch (error) {
+        console.log('Message polling disabled');
+      }
+    }, 3000);
 
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'message') {
-          setMessages(prev => [...prev, msg.payload]);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.log('WebSocket connection not available - chat feature disabled');
-      };
-
-      return () => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-      };
-    } catch (error) {
-      console.log('WebSocket not supported - chat feature disabled');
-    }
-  }, []);
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -163,20 +152,31 @@ const ChatWindow = ({ isOpen, onClose, isAuthenticated, setIsAuthOpen }: {
     }
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    const msg = {
-      type: 'message',
-      room: 'global',
-      payload: {
-        sender: 'User',
-        text: input,
-        type: 'text',
-        created_at: new Date().toISOString()
-      }
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'User',
+      text: input,
+      type: 'text',
+      created_at: new Date().toISOString()
     };
-    wsRef.current?.send(JSON.stringify(msg));
+
+    // Optimistically add message to UI
+    setMessages(prev => [...prev, newMessage]);
     setInput('');
+
+    // Send to API (optional - implement when ready)
+    try {
+      // await fetch('/api/messages', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ room: 'global', ...newMessage })
+      // });
+    } catch (error) {
+      console.log('Message send failed - showing locally only');
+    }
   };
 
   return (
@@ -1250,8 +1250,8 @@ export default function App() {
                 <option>이번 달</option>
               </select>
             </div>
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-48 w-full min-h-[192px]">
+              <ResponsiveContainer width="100%" height={192}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
