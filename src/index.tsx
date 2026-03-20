@@ -171,14 +171,37 @@ app.get('*', (c) => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>700신문고 - Global Korean Voice Platform</title>
-  <script type="module" crossorigin src="/assets/index-DPlPu8Pv.js"></script>
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/assets/index-DPlPu8Pv.js" as="script" crossorigin />
+  <link rel="preload" href="/assets/index-C-8Rv5YB.css" as="style" />
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" crossorigin href="/assets/index-C-8Rv5YB.css">
+  
+  <!-- Inline critical CSS for faster render -->
+  <style>
+    #root { min-height: 100vh; }
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
+  
+  <!-- Fallback for no JavaScript -->
+  <noscript>
+    <div style="text-align: center; padding: 50px; font-family: sans-serif;">
+      <h1>JavaScript가 필요합니다</h1>
+      <p>이 애플리케이션을 사용하려면 JavaScript를 활성화해주세요.</p>
+    </div>
+  </noscript>
+  
+  <!-- Main application script -->
+  <script type="module" crossorigin src="/assets/index-DPlPu8Pv.js"></script>
 </body>
-</html>`);
+</html>`)
 });
 
 export default app;
