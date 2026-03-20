@@ -19,8 +19,8 @@ export default function MainPage() {
     <div className="min-h-screen bg-bgMain">
       
       {/* Top Bar */}
-      <div className="bg-danger text-white text-center py-2 text-sm font-medium">
-        외교부 직통 신고 | 긴급 신고: +82-2-2100-7500
+      <div className="bg-danger text-white text-center py-2 text-sm font-medium shadow-sm">
+        🚨 외교부 직통 신고 | 긴급 연락: +82-2-2100-7500
       </div>
 
       {/* Header */}
