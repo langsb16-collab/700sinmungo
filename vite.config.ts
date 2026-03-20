@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   // Client build configuration
   if (mode === 'client') {
     return {
-      base: './',
+      base: '/',
       plugins: [react()],
       build: {
         outDir: 'dist',
@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
 
   // Worker build configuration (default)
   return {
-    base: './',
+    base: '/',
     plugins: [pages(), react()],
     build: {
       outDir: 'dist',

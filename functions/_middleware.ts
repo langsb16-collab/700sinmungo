@@ -8,10 +8,10 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.use('*', cors());
+app.use('/api/*', cors());
 
 // Health check
-app.get('/health', (c) => {
+app.get('/api/health', (c) => {
   return c.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString() 
@@ -19,7 +19,7 @@ app.get('/health', (c) => {
 });
 
 // Get countries
-app.get('/countries', async (c) => {
+app.get('/api/countries', async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(
     'SELECT * FROM countries ORDER BY name_ko ASC'
@@ -28,7 +28,7 @@ app.get('/countries', async (c) => {
 });
 
 // Get categories
-app.get('/categories', async (c) => {
+app.get('/api/categories', async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(
     'SELECT * FROM categories'
@@ -37,7 +37,7 @@ app.get('/categories', async (c) => {
 });
 
 // Get posts
-app.get('/posts', async (c) => {
+app.get('/api/posts', async (c) => {
   const { DB } = c.env;
   const category_code = c.req.query('category_code');
   const country_code = c.req.query('country_code');
@@ -69,7 +69,7 @@ app.get('/posts', async (c) => {
 });
 
 // Create post
-app.post('/posts', async (c) => {
+app.post('/api/posts', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
   const { title, content, category_id, country_code, nationality, price } = body;
@@ -85,7 +85,7 @@ app.post('/posts', async (c) => {
 });
 
 // OTP send
-app.post('/otp/send', async (c) => {
+app.post('/api/otp/send', async (c) => {
   return c.json({ 
     success: true, 
     message: 'OTP sent successfully (Simulated)' 
@@ -93,7 +93,7 @@ app.post('/otp/send', async (c) => {
 });
 
 // Diplomatic reports
-app.post('/diplomatic-reports', async (c) => {
+app.post('/api/diplomatic-reports', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
   
@@ -109,7 +109,7 @@ app.post('/diplomatic-reports', async (c) => {
 });
 
 // Debate rooms
-app.get('/debate/rooms', async (c) => {
+app.get('/api/debate/rooms', async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(`
     SELECT * FROM debate_rooms 
@@ -120,7 +120,7 @@ app.get('/debate/rooms', async (c) => {
   return c.json(results);
 });
 
-app.post('/debate/create', async (c) => {
+app.post('/api/debate/create', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
   const { title, topic, max_participants } = body;
@@ -136,13 +136,20 @@ app.post('/debate/create', async (c) => {
 });
 
 // Chat not implemented
-app.get('/chat', (c) => {
+app.get('/api/chat', (c) => {
   return c.json({ 
     error: 'WebSocket chat requires Durable Objects',
     message: 'Real-time chat feature coming soon'
   }, 501);
 });
 
-export const onRequest = (context: any) => {
-  return app.fetch(context.request, context.env);
+export const onRequest: PagesFunction<Bindings> = async (context) => {
+  // Only handle /api/* requests
+  const url = new URL(context.request.url);
+  if (url.pathname.startsWith('/api/')) {
+    return app.fetch(context.request, context.env, context);
+  }
+  
+  // Pass through all other requests to Pages
+  return context.next();
 };
