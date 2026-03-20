@@ -1,31 +1,25 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { serveStatic } from 'hono/cloudflare-workers';
 import { v4 as uuidv4 } from 'uuid';
 
 type Bindings = {
   DB: D1Database;
-  ASSETS?: Fetcher;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Enable CORS
-app.use('/api/*', cors());
+app.use('*', cors());
 
-// --- API Routes ---
-
-// OTP send (simulated)
-app.post('/api/otp/send', async (c) => {
-  const { phone } = await c.req.json();
+// Health check
+app.get('/health', (c) => {
   return c.json({ 
-    success: true, 
-    message: 'OTP sent successfully (Simulated)' 
+    status: 'ok', 
+    timestamp: new Date().toISOString() 
   });
 });
 
 // Get countries
-app.get('/api/countries', async (c) => {
+app.get('/countries', async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(
     'SELECT * FROM countries ORDER BY name_ko ASC'
@@ -34,7 +28,7 @@ app.get('/api/countries', async (c) => {
 });
 
 // Get categories
-app.get('/api/categories', async (c) => {
+app.get('/categories', async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(
     'SELECT * FROM categories'
@@ -43,7 +37,7 @@ app.get('/api/categories', async (c) => {
 });
 
 // Get posts
-app.get('/api/posts', async (c) => {
+app.get('/posts', async (c) => {
   const { DB } = c.env;
   const category_code = c.req.query('category_code');
   const country_code = c.req.query('country_code');
@@ -75,7 +69,7 @@ app.get('/api/posts', async (c) => {
 });
 
 // Create post
-app.post('/api/posts', async (c) => {
+app.post('/posts', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
   const { title, content, category_id, country_code, nationality, price } = body;
@@ -90,8 +84,16 @@ app.post('/api/posts', async (c) => {
   return c.json({ success: true, id });
 });
 
-// Create diplomatic report
-app.post('/api/diplomatic-reports', async (c) => {
+// OTP send
+app.post('/otp/send', async (c) => {
+  return c.json({ 
+    success: true, 
+    message: 'OTP sent successfully (Simulated)' 
+  });
+});
+
+// Diplomatic reports
+app.post('/diplomatic-reports', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
   
@@ -99,33 +101,29 @@ app.post('/api/diplomatic-reports', async (c) => {
   const priority_score = 10;
 
   await DB.prepare(`
-    INSERT INTO diplomatic_reports (
-      id, phone_hash, country_code, mission_name, 
-      complaint_type, description, is_anonymous, priority_score
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    id,
-    body.phone_hash,
-    body.country_code,
-    body.mission_name,
-    body.complaint_type,
-    body.description,
-    body.is_anonymous ? 1 : 0,
-    priority_score
-  ).run();
+    INSERT INTO diplomatic_reports (id, title, content, country_code, reporter_phone_hash, priority_score)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(id, body.title, body.content, body.country_code, 'simulated_hash', priority_score).run();
 
-  return c.json({ 
-    status: 'submitted', 
-    id, 
-    priority_score 
-  });
+  return c.json({ success: true, id, priority_score });
 });
 
-// Create debate room
-app.post('/api/debate/create', async (c) => {
+// Debate rooms
+app.get('/debate/rooms', async (c) => {
   const { DB } = c.env;
-  const { title, topic, max_participants } = await c.req.json();
+  const { results } = await DB.prepare(`
+    SELECT * FROM debate_rooms 
+    ORDER BY created_at DESC 
+    LIMIT 50
+  `).all();
+  
+  return c.json(results);
+});
+
+app.post('/debate/create', async (c) => {
+  const { DB } = c.env;
+  const body = await c.req.json();
+  const { title, topic, max_participants } = body;
   
   const id = uuidv4();
   
@@ -137,35 +135,14 @@ app.post('/api/debate/create', async (c) => {
   return c.json({ success: true, id });
 });
 
-// Get debate rooms
-app.get('/api/debate/rooms', async (c) => {
-  const { DB } = c.env;
-  const { results } = await DB.prepare(`
-    SELECT * FROM debate_rooms 
-    ORDER BY created_at DESC 
-    LIMIT 50
-  `).all();
-  
-  return c.json(results);
-});
-
-// Health check
-app.get('/api/health', (c) => {
-  return c.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString() 
-  });
-});
-
-// WebSocket chat endpoint - not yet implemented
-app.get('/api/chat', (c) => {
+// Chat not implemented
+app.get('/chat', (c) => {
   return c.json({ 
     error: 'WebSocket chat requires Durable Objects',
     message: 'Real-time chat feature coming soon'
   }, 501);
 });
 
-// Catch all for SPA routing - serve static files
-app.use('/*', serveStatic({ root: './' }))
-
-export default app;
+export const onRequest = (context: any) => {
+  return app.fetch(context.request, context.env);
+};
