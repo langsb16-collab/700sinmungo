@@ -2200,6 +2200,44 @@ app.get("/api/health", (c) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
+app.post("/api/upload", async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get("file");
+    if (!file) {
+      return c.json({ error: "No file provided" }, 400);
+    }
+    const key = `uploads/${Date.now()}-${file.name}`;
+    if (c.env.BUCKET) {
+      await c.env.BUCKET.put(key, file.stream());
+      return c.json({
+        success: true,
+        url: `https://cdn.huan.my/${key}`,
+        key
+      });
+    }
+    return c.json({
+      success: true,
+      url: `/uploads/${file.name}`,
+      key,
+      message: "R2 not configured, using simulation"
+    });
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+app.get("/api/chat/messages", async (c) => {
+  return c.json({
+    messages: [
+      "\uC2DC\uC2A4\uD15C: \uCC44\uD305\uBC29\uC5D0 \uC624\uC2E0 \uAC83\uC744 \uD658\uC601\uD569\uB2C8\uB2E4",
+      "\uAD00\uB9AC\uC790: \uBB38\uC758\uC0AC\uD56D\uC774 \uC788\uC73C\uC2DC\uBA74 \uB9D0\uC500\uD574\uC8FC\uC138\uC694"
+    ]
+  });
+});
+app.post("/api/chat/send", async (c) => {
+  const body = await c.req.json();
+  return c.json({ success: true, message: body.message });
+});
 app.get("/api/countries", async (c) => {
   const { DB } = c.env;
   const { results } = await DB.prepare(
@@ -2241,7 +2279,7 @@ app.get("/api/posts", async (c) => {
 app.post("/api/posts", async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
-  const { title, content, category_id, country_code, nationality, price } = body;
+  const { title, content, category_id, country_code, nationality, price, file_url } = body;
   const id = v4_default();
   await DB.prepare(`
     INSERT INTO posts (id, title, content, category_id, country_code, nationality, price)

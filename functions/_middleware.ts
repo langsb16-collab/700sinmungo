@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type Bindings = {
   DB: D1Database;
+  BUCKET?: R2Bucket;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -16,6 +17,58 @@ app.get('/api/health', (c) => {
     status: 'ok', 
     timestamp: new Date().toISOString() 
   });
+});
+
+// File upload (R2)
+app.post('/api/upload', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return c.json({ error: 'No file provided' }, 400);
+    }
+
+    const key = `uploads/${Date.now()}-${file.name}`;
+    
+    // R2가 설정되어 있으면 업로드
+    if (c.env.BUCKET) {
+      await c.env.BUCKET.put(key, file.stream());
+      return c.json({ 
+        success: true, 
+        url: `https://cdn.huan.my/${key}`,
+        key 
+      });
+    }
+    
+    // R2 없으면 시뮬레이션
+    return c.json({ 
+      success: true, 
+      url: `/uploads/${file.name}`,
+      key,
+      message: 'R2 not configured, using simulation'
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Chat messages (polling)
+app.get('/api/chat/messages', async (c) => {
+  // 간단한 메시지 목록 반환
+  return c.json({ 
+    messages: [
+      "시스템: 채팅방에 오신 것을 환영합니다",
+      "관리자: 문의사항이 있으시면 말씀해주세요"
+    ]
+  });
+});
+
+// Send chat message
+app.post('/api/chat/send', async (c) => {
+  const body = await c.req.json();
+  // 실제로는 DB나 메모리에 저장
+  return c.json({ success: true, message: body.message });
 });
 
 // Get countries
@@ -72,7 +125,7 @@ app.get('/api/posts', async (c) => {
 app.post('/api/posts', async (c) => {
   const { DB } = c.env;
   const body = await c.req.json();
-  const { title, content, category_id, country_code, nationality, price } = body;
+  const { title, content, category_id, country_code, nationality, price, file_url } = body;
   
   const id = uuidv4();
   
