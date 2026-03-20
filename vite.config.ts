@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   // Client build configuration
   if (mode === 'client') {
     return {
+      base: './',
       plugins: [react()],
       build: {
         outDir: 'dist',
@@ -26,10 +27,11 @@ export default defineConfig(({ mode }) => {
 
   // Worker build configuration (default)
   return {
+    base: './',
     plugins: [pages(), react()],
     build: {
       outDir: 'dist',
-      emptyOutDir: false // Don't delete client files
+      emptyOutDir: false
     },
     server: {
       port: 3000,
