@@ -166,29 +166,40 @@ app.get('/api/chat', (c) => {
 
 // Catch all for SPA routing
 app.get('*', (c) => {
+  // Set aggressive no-cache headers
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
+  c.header('Surrogate-Control', 'no-store');
+  
+  // Add version query parameter to bust cache
+  const version = Date.now();
+  
   return c.html(`<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>700신문고 - Global Korean Voice Platform</title>
   
-  <!-- Preload critical resources -->
-  <link rel="preload" href="/assets/index-DPlPu8Pv.js" as="script" crossorigin />
-  <link rel="preload" href="/assets/index-C-8Rv5YB.css" as="style" />
+  <!-- Stylesheets with cache busting -->
+  <link rel="stylesheet" href="/assets/index-C-8Rv5YB.css?v=${version}">
   
-  <!-- Stylesheets -->
-  <link rel="stylesheet" crossorigin href="/assets/index-C-8Rv5YB.css">
-  
-  <!-- Inline critical CSS for faster render -->
+  <!-- Inline critical CSS -->
   <style>
     #root { min-height: 100vh; }
-    body { margin: 0; padding: 0; font-family: sans-serif; }
+    body { margin: 0; padding: 0; font-family: sans-serif; background: #F8F9FC; }
+    .loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div class="loading">로딩 중...</div>
+  </div>
   
   <!-- Fallback for no JavaScript -->
   <noscript>
@@ -198,8 +209,8 @@ app.get('*', (c) => {
     </div>
   </noscript>
   
-  <!-- Main application script -->
-  <script type="module" crossorigin src="/assets/index-DPlPu8Pv.js"></script>
+  <!-- Main application script with cache busting -->
+  <script type="module" src="/assets/index-DPlPu8Pv.js?v=${version}"></script>
 </body>
 </html>`)
 });
