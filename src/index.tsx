@@ -172,7 +172,7 @@ app.get('*', (c) => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>700신문고 - Global Korean Voice Platform</title>
-  <script type="module" crossorigin src="/assets/index-B_XaipBI.js"></script>
+  <script type="module" crossorigin src="/assets/index-DPlPu8Pv.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-C-8Rv5YB.css">
 </head>
 <body>

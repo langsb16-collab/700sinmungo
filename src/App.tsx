@@ -934,6 +934,8 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('public');
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const requireAuth = (callback: () => void) => {
     if (!isAuthenticated) {
@@ -944,13 +946,42 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then(res => res.json())
-      .then(data => setCategories(data));
+    setIsLoading(true);
+    setApiError(null);
     
-    fetch('/api/countries')
-      .then(res => res.json())
-      .then(data => setCountries(data));
+    Promise.all([
+      fetch('/api/categories').then(res => {
+        if (!res.ok) throw new Error('Categories API failed');
+        return res.json();
+      }),
+      fetch('/api/countries').then(res => {
+        if (!res.ok) throw new Error('Countries API failed');
+        return res.json();
+      })
+    ])
+    .then(([categoriesData, countriesData]) => {
+      setCategories(categoriesData || []);
+      setCountries(countriesData || []);
+      setIsLoading(false);
+    })
+    .catch(error => {
+      console.error('API Error:', error);
+      setApiError(error.message);
+      setIsLoading(false);
+      // Set default data as fallback
+      setCategories([
+        { id: 'cat-001', code: 'public', label_ko: '공론·민원' },
+        { id: 'cat-002', code: 'job', label_ko: '구인·구직' },
+        { id: 'cat-003', code: 'realestate', label_ko: '부동산' },
+        { id: 'cat-004', code: 'promotion', label_ko: '홍보' },
+        { id: 'cat-005', code: 'business', label_ko: '비즈니스' }
+      ]);
+      setCountries([
+        { code: 'GH', name_ko: '가나', continent: 'Africa' },
+        { code: 'US', name_ko: '미국', continent: 'North America' },
+        { code: 'KR', name_ko: '한국', continent: 'Asia' }
+      ]);
+    });
   }, []);
 
   const fetchPosts = () => {
@@ -1032,6 +1063,18 @@ export default function App() {
     { name: 'Sat', count: 20 },
     { name: 'Sun', count: 15 },
   ];
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#1428A0] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] font-sans text-gray-900 flex flex-col">
